@@ -16,6 +16,7 @@
 
 package com.android.systemui.statusbar.pipeline.wifi.shared.model
 
+import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.net.wifi.WifiManager.UNKNOWN_SSID
 import android.net.wifi.sharedconnectivity.app.NetworkProviderInfo
@@ -243,6 +244,13 @@ sealed class WifiNetworkModel : Diffable<WifiNetworkModel> {
          * isn't a hotspot connection.
          */
         val hotspotDeviceType: HotspotDeviceType,
+
+        /**
+         * The IEEE 802.11 standard this network is using. Will be one of the
+         * [ScanResult.WIFI_STANDARD_11N]..[ScanResult.WIFI_STANDARD_11BE] constants, or
+         * [ScanResult.WIFI_STANDARD_UNKNOWN].
+         */
+        val wifiStandard: Int,
     ) : WifiNetworkModel() {
         companion object {
             /**
@@ -255,11 +263,12 @@ sealed class WifiNetworkModel : Diffable<WifiNetworkModel> {
                 level: Int,
                 ssid: String? = null,
                 hotspotDeviceType: HotspotDeviceType = HotspotDeviceType.NONE,
+                wifiStandard: Int = ScanResult.WIFI_STANDARD_UNKNOWN,
             ): WifiNetworkModel {
                 if (!level.isValid()) {
                     return Inactive(getInvalidLevelErrorString(level))
                 }
-                return Active(showExclamation, level, ssid, hotspotDeviceType)
+                return Active(showExclamation, level, ssid, hotspotDeviceType, wifiStandard)
             }
 
             private fun Int.isValid(): Boolean {
@@ -304,6 +313,9 @@ sealed class WifiNetworkModel : Diffable<WifiNetworkModel> {
             if (prevVal.hotspotDeviceType != hotspotDeviceType) {
                 row.logChange(COL_HOTSPOT, hotspotDeviceType.name)
             }
+            if (prevVal.wifiStandard != wifiStandard) {
+                row.logChange(COL_WIFI_STANDARD, wifiStandard)
+            }
         }
 
         override fun logFull(row: TableRowLogger) {
@@ -314,6 +326,7 @@ sealed class WifiNetworkModel : Diffable<WifiNetworkModel> {
             row.logChange(COL_NUM_LEVELS, null)
             row.logChange(COL_SSID, ssid)
             row.logChange(COL_HOTSPOT, hotspotDeviceType.name)
+            row.logChange(COL_WIFI_STANDARD, wifiStandard)
         }
     }
 
@@ -368,6 +381,7 @@ const val COL_LEVEL = "level"
 const val COL_NUM_LEVELS = "maxLevel"
 const val COL_SSID = "ssid"
 const val COL_HOTSPOT = "hotspot"
+const val COL_WIFI_STANDARD = "wifiStandard"
 
 val LEVEL_DEFAULT: String? = null
 val NUM_LEVELS_DEFAULT: String? = null
